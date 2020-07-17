@@ -12,13 +12,14 @@ const {
   userLeave,
   getRoomUsers
 } = require('./utils/users');
+const users = require('./utils/users');
 
 const app = express();
 //needed for socket.io
 const server = http.createServer(app);
 //for chat
 const io = socketio(server);
-
+const user2 = {};
 // Set static folder
 app.use(express.static(path.join(__dirname, 'public')));
 //this is for the messages.js (format message function) botname is username
@@ -43,10 +44,26 @@ io.on('connection', socket => {
     //formatmessage. format is username(botname), message, and than time
     //format message function takes in username and text (botname, welcome to chatcord)
     socket.emit('message', formatMessage(botName, 'Welcome to ChatCord!'));
-    console.log('sending pm')
-const pm = 'shh private message'
-    io.to(socket.id).emit('private',pm)
-    console.log('pm sent')
+  //basic private messaging sends message to socket.id and the 
+  //message whoa private messaging works is logged to the console 
+  io.sockets.on('privatemessage', function(usersocket){
+    sockets.on('new user', function(data, callback){
+      if (data in user2){
+        callback(false);
+      }else 
+      callback(true);
+      socket.nickname = data;
+      user2[socket.nickname] = socket;
+      updateNicknames();
+      })
+    })
+    function updateNicknames(){
+      io.sockets.emit('usernames', Object.keys(user2))
+    }
+    
+  //})
+
+    io.to(socket.id).emit(console.log('whoa private messaging works'))
     // Broadcast when a user connects
     //this emits to everyone except user that is connected 
     // io.emit() broadcasts to all clients
@@ -71,7 +88,28 @@ const pm = 'shh private message'
   });
 
   // Listen for chatMessage that user types in chat box
-  socket.on('chatMessage', msg => {
+  //this also is for private messaging using /w for sending messages
+  //this also uses an array / object of users sockets to determine who to message
+  socket.on('chatMessage', function(msg, callback) {
+    var message = msg.trim();
+    if(message.substr(0,3) === '/w '){
+      message = msg.substr(3);
+      var ind = message.indexof('');
+      if (ind !== -1){
+        var name = message.substr(0, ind);
+        var message = message.substr(ind +1)
+        if(name in user2 ){
+          user2[name].emit('whisper', formatMessage(user.username, msg))
+        console.log('whisper')
+
+      } else{
+          callback("Error enter a valid user")
+      }
+    }else{
+        callback("Error! Please enter a message for your whisper")
+      }
+    }else{
+      
     //this console logs to server message user types in chat
     console.log(msg)
     //gets user by socket.id
@@ -80,9 +118,11 @@ const pm = 'shh private message'
     //emitted / sent to room user joins and shows the name of the user when messages are sent from user   
     //formatmessage msg ensures that username, time, and text is sent
     io.to(user.room).emit('message', formatMessage(user.username, msg));
+  
+  }
   });
   
-
+  //msg, callback =>
   // Runs when client disconnects 
   socket.on('disconnect', () => {
     //need to know which user left thats why declaring

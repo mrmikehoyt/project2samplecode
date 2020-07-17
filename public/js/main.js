@@ -43,6 +43,14 @@ socket.on('message', message => {
 });
 
 
+
+socket.on('usernames', function(data){
+  var html = '';
+  for(i=0; i < data.length; i++){
+    html += data[i] + '<br/>'
+  }
+  userList.html(html)
+})
 // Message submit
 chatForm.addEventListener('submit', e => {
   e.preventDefault();
@@ -54,7 +62,7 @@ chatForm.addEventListener('submit', e => {
   console.log(msg)
   // Emit message that user types in chat to server so it shows up in chat
   socket.emit('chatMessage', msg);
-
+//update later for pm
   // Clear input
   //this clears the box where your enter messages after the message has been sent
 
